@@ -21,9 +21,9 @@ public class StripesMapper extends Mapper<LongWritable, Text, Text, MapWritable>
             for (int j = 0; j < items.length; j++) {
                 if (i == j) continue;
                 Text coItem = new Text(items[j]);
-                IntWritable count = (IntWritable) stripe.get(coItem);
+                LongWritable count = (LongWritable) stripe.get(coItem);
                 if (count == null) {
-                    stripe.put(coItem, new IntWritable(1));
+                    stripe.put(coItem, new LongWritable(1));
                 } else {
                     count.set(count.get() + 1);
                 }

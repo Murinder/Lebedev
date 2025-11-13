@@ -13,7 +13,7 @@ public class StripesReducer extends Reducer<Text, MapWritable, Text, Text> {
         Map<String, Integer> total = new HashMap<>();
         for (MapWritable stripe : values) {
             for (Writable k : stripe.keySet()) {
-                String coItem = ((Text) k).toString();
+                String coItem =  k.toString();
                 IntWritable cnt = (IntWritable) stripe.get(k);
                 total.merge(coItem, cnt.get(), Integer::sum);
             }
@@ -24,9 +24,7 @@ public class StripesReducer extends Reducer<Text, MapWritable, Text, Text> {
         list.sort(Map.Entry.<String, Integer>comparingByValue().reversed());
 
         StringBuilder sb = new StringBuilder();
-        int n = 0;
         for (Map.Entry<String, Integer> e : list) {
-            if (n++ >= 10) break;
             if (sb.length() > 0) sb.append(", ");
             sb.append(e.getKey()).append(":").append(e.getValue());
         }

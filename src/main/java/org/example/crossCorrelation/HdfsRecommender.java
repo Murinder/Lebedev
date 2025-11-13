@@ -6,15 +6,20 @@ import org.apache.hadoop.fs.*;
 import java.io.*;
 import java.net.URI;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class HdfsRecommender {
+    // Регулярное выражение для пары "ключ:значение", например: product_042:12
+    private static final Pattern PAIR_PATTERN = Pattern.compile("([^,:\\s]+):(\\d+)");
+
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
-            System.err.println("Usage: HdfsRecommender <hdfs_output_dir> <item>");
+            System.err.println("Usage: HdfsRecommender <hdfs_stripes_output_dir> <item>");
             return;
         }
 
-        String hdfsUri = "hdfs://localhost:9000"; // или из core-site.xml
+        String hdfsUri = "hdfs://localhost:9000";
         String outputDir = args[0];
         String target = args[1];
 
@@ -34,16 +39,22 @@ public class HdfsRecommender {
                         new InputStreamReader(fs.open(path), "UTF-8"))) {
                     String line;
                     while ((line = br.readLine()) != null) {
-                        // Формат Pairs: "A\tB\tcount"
-                        String[] parts = line.split("\t");
-                        if (parts.length == 3) {
-                            String a = parts[0];
-                            String b = parts[1];
-                            int cnt = Integer.parseInt(parts[2]);
-                            if (a.equals(target)) {
-                                coOccur.put(b, coOccur.getOrDefault(b, 0) + cnt);
-                            } else if (b.equals(target)) {
-                                coOccur.put(a, coOccur.getOrDefault(a, 0) + cnt);
+                        // Формат Stripes: "A\tB:cnt1, C:cnt2, D:cnt3"
+                        String[] parts = line.split("\t", 2); // разделяем только на 2 части: ключ и всё остальное
+                        if (parts.length != 2) continue;
+
+                        String key = parts[0];
+                        String stripeStr = parts[1].trim();
+
+                        if (key.equals(target)) {
+                            // Парсим "B:12, C:5, D:3" → обновляем coOccur
+                            Matcher m = PAIR_PATTERN.matcher(stripeStr);
+                            while (m.find()) {
+                                String neighbor = m.group(1);
+                                int count = Integer.parseInt(m.group(2));
+                                if (!neighbor.equals(target)) {
+                                    coOccur.merge(neighbor, count, Integer::sum);
+                                }
                             }
                         }
                     }

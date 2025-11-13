@@ -8,8 +8,8 @@ import org.apache.hadoop.mapreduce.Mapper;
 import java.io.IOException;
 import java.util.Arrays;
 
-public class PairsMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
-    private final static IntWritable one = new IntWritable(1);
+public class PairsMapper extends Mapper<LongWritable, Text, Text, LongWritable> {
+    private final static LongWritable one = new LongWritable(1);
     private Text pair = new Text();
 
     @Override
