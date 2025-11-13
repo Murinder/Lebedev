@@ -19,7 +19,7 @@ public class StripesReducer extends Reducer<Text, MapWritable, Text, Text> {
             }
         }
 
-        // Сортируем и берём топ-10
+        // Сортируем
         List<Map.Entry<String, Integer>> list = new ArrayList<>(total.entrySet());
         list.sort(Map.Entry.<String, Integer>comparingByValue().reversed());
 
