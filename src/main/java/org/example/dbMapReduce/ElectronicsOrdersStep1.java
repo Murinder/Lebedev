@@ -12,7 +12,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -21,7 +20,7 @@ import java.util.Map;
 public class ElectronicsOrdersStep1 {
 
     public static class ElectronicsJoinMapper extends Mapper<LongWritable, Text, Text, Text> {
-        private Map<String, String> productsMap = new HashMap<>();
+        private final Map<String, String> productsMap = new HashMap<>();
 
         @Override
         protected void setup(Context context) throws IOException {

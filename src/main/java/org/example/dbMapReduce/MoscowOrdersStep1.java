@@ -12,7 +12,6 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
@@ -21,8 +20,8 @@ import java.util.Map;
 public class MoscowOrdersStep1 {
 
     public static class MoscowJoinMapper extends Mapper<LongWritable, Text, Text, Text> {
-        private Map<String, String[]> customersMap = new HashMap<>();
-        private String moscowCustomerId = "";
+        private final Map<String, String[]> customersMap = new HashMap<>();
+        private final String moscowCustomerId = "";
 
         @Override
         protected void setup(Context context) throws IOException {
