@@ -2,7 +2,7 @@ package org.example.crossCorrelation;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.MapWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
@@ -24,7 +24,7 @@ public class CrossCorrelationDriver {
         job1.setCombinerClass(PairsReducer.class);
         job1.setReducerClass(PairsReducer.class);
         job1.setOutputKeyClass(Text.class);
-        job1.setOutputValueClass(IntWritable.class);
+        job1.setOutputValueClass(LongWritable.class);
         FileInputFormat.addInputPath(job1, new Path(args[0]));
         FileOutputFormat.setOutputPath(job1, new Path(args[1]));
         job1.waitForCompletion(true);
