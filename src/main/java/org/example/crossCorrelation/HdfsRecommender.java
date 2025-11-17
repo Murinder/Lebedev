@@ -64,7 +64,6 @@ public class HdfsRecommender {
 
         // Сортировка и вывод топ-10
         coOccur.entrySet().stream()
-                .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
                 .limit(10)
                 .forEach(entry -> System.out.println(entry.getKey() + " : " + entry.getValue()));
     }
