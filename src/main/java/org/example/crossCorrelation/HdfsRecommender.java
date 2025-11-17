@@ -62,7 +62,7 @@ public class HdfsRecommender {
             }
         }
 
-        // Сортировка и вывод топ-10
+        // вывод топ-10
         coOccur.entrySet().stream()
                 .limit(10)
                 .forEach(entry -> System.out.println(entry.getKey() + " : " + entry.getValue()));
