@@ -18,8 +18,100 @@ import static org.apache.spark.sql.functions.*;
 
 public class TwitterGraphAnalysis {
 
+    // ================================
+    // ОСНОВНОЙ СТАРТЕР
+    // ================================
     public static void main(String[] args) {
-        SparkSession spark = SparkSession.builder()
+        if (args.length != 1) {
+            System.err.println("Usage: java TwitterGraphAnalysis <task>");
+            System.err.println("Available tasks: task1, task2, task3");
+            System.exit(1);
+        }
+
+        String task = args[0].toLowerCase();
+        switch (task) {
+            case "task1":
+                runTask1_ChainStarter(2);
+                break;
+            case "task2":
+                runTask2_LargestComponents();
+                break;
+            case "task3":
+                runTask3_PoliticalGroups(0.40);
+                break;
+            default:
+                System.err.println("Unknown task: " + task + ". Use task1, task2, or task3.");
+                System.exit(1);
+        }
+    }
+
+    // ================================
+    // ЗАДАЧА 1: ЦЕПОЧКА СООБЩЕНИЙ
+    // ================================
+    public static void runTask1_ChainStarter(int nChain) {
+        SparkSession spark = createSparkSession();
+        try {
+            Dataset<Row> sampledDF = loadAndSampleData(spark);
+            findNthLongestChainStarter(spark, sampledDF, nChain);
+        } finally {
+            spark.stop();
+        }
+    }
+
+    // ================================
+    // ЗАДАЧА 2: КОМПОНЕНТЫ СВЯЗНОСТИ
+    // ================================
+    public static void runTask2_LargestComponents() {
+        SparkSession spark = createSparkSession();
+        try {
+            Dataset<Row> sampledDF = loadAndSampleData(spark);
+
+            Column russianFilter = col("user_reported_location").isNotNull()
+                    .and(col("user_reported_location").like("%Россия%")
+                            .or(col("user_reported_location").like("%Russia%"))
+                            .or(col("user_reported_location").like("%РФ%")));
+
+            Column moscowFilter = col("user_reported_location").isNotNull()
+                    .and(col("user_reported_location").like("%Москва%")
+                            .or(col("user_reported_location").like("%Moscow%"))
+                            .or(col("user_reported_location").like("%Msk%")));
+
+            Column foreignFilter = col("user_reported_location").isNotNull()
+                    .and(not(col("user_reported_location").like("%Россия%")))
+                    .and(not(col("user_reported_location").like("%Russia%")))
+                    .and(not(col("user_reported_location").like("%РФ%")))
+                    .and(not(col("user_reported_location").like("%Москва%")))
+                    .and(not(col("user_reported_location").like("%Moscow%")))
+                    .and(not(col("user_reported_location").like("%Msk%")));
+
+            findLargestComponentForGroup(spark, sampledDF, russianFilter, "RUSSIAN");
+            findLargestComponentForGroup(spark, sampledDF, moscowFilter, "MOSCOW");
+            findLargestComponentForGroup(spark, sampledDF, foreignFilter, "FOREIGN");
+
+        } finally {
+            spark.stop();
+        }
+    }
+
+    // ================================
+    // ЗАДАЧА 3: ПОЛИТИЧЕСКИЕ БЕСЕДЫ
+    // ================================
+    public static void runTask3_PoliticalGroups(double threshold) {
+        SparkSession spark = createSparkSession();
+        try {
+            Dataset<Row> sampledDF = loadAndSampleData(spark);
+            findPoliticalConversationGroups(spark, sampledDF, threshold);
+        } finally {
+            spark.stop();
+        }
+    }
+
+    // ================================
+    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
+    // ================================
+
+    private static SparkSession createSparkSession() {
+        return SparkSession.builder()
                 .appName("TwitterGraphAnalysis")
                 .master("local[*]")
                 .config("spark.driver.memory", "8g")
@@ -30,11 +122,11 @@ public class TwitterGraphAnalysis {
                 .config("spark.sql.shuffle.partitions", "200")
                 .config("spark.default.parallelism", "200")
                 .getOrCreate();
+    }
 
-        // Установка директории для контрольных точек
+    private static Dataset<Row> loadAndSampleData(SparkSession spark) {
         spark.sparkContext().setCheckpointDir("/tmp");
 
-        // Загрузка данных
         Dataset<Row> tweetsDF = spark.read()
                 .option("header", true)
                 .option("inferSchema", true)
@@ -42,41 +134,12 @@ public class TwitterGraphAnalysis {
                 .option("escape", "\"")
                 .csv("hdfs://localhost:9000/user/twitter_data/ira_tweets_csv_hashed.csv");
 
-        Dataset<Row> sampledDF = tweetsDF.sample(false, 0.01, 42); // 42 — seed
+        System.out.println("Общее количество твитов: " + tweetsDF.count());
 
-        // Задание 3: Найти группу пользователей с политическими беседами
-        findPoliticalConversationGroups(spark, sampledDF, 0.05);
+        Dataset<Row> sampledDF = tweetsDF.sample(false, 0.5, 42);
+        System.out.println("Сэмпл (1%): " + sampledDF.count());
 
-        // Задание 2: Найти наибольшую компоненту связности для разных групп пользователей
-        // Фильтр для российских пользователей
-        Column russianFilter = col("user_reported_location").isNotNull()
-                .and(col("user_reported_location").like("%Россия%")
-                        .or(col("user_reported_location").like("%Russia%"))
-                        .or(col("user_reported_location").like("%РФ%")));
-        findLargestComponentForGroup(spark, sampledDF, russianFilter, "RUSSIAN");
-
-        // Фильтр для московских пользователей
-        Column moscowFilter = col("user_reported_location").isNotNull()
-                .and(col("user_reported_location").like("%Москва%")
-                        .or(col("user_reported_location").like("%Moscow%"))
-                        .or(col("user_reported_location").like("%Msk%")));
-        findLargestComponentForGroup(spark, sampledDF, moscowFilter, "MOSCOW");
-
-        // Фильтр для иностранных пользователей
-        Column foreignFilter = col("user_reported_location").isNotNull()
-                .and(not(col("user_reported_location").like("%Россия%")))
-                .and(not(col("user_reported_location").like("%Russia%")))
-                .and(not(col("user_reported_location").like("%РФ%")))
-                .and(not(col("user_reported_location").like("%Москва%")))
-                .and(not(col("user_reported_location").like("%Moscow%")))
-                .and(not(col("user_reported_location").like("%Msk%")));
-        findLargestComponentForGroup(spark, sampledDF, foreignFilter, "FOREIGN");
-
-
-
-        // Задание 1: Найти пользователя, начавшего n-ю по количеству сообщений непрерывную цепочку
-        findNthLongestChainStarter(spark, sampledDF, 2);
-        spark.stop();
+        return sampledDF;
     }
 
     /**
