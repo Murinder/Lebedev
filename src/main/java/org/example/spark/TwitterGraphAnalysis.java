@@ -18,9 +18,6 @@ import static org.apache.spark.sql.functions.*;
 
 public class TwitterGraphAnalysis {
 
-    // ================================
-    // ОСНОВНОЙ СТАРТЕР
-    // ================================
     public static void main(String[] args) {
         if (args.length != 1) {
             System.err.println("Usage: java TwitterGraphAnalysis <task>");
@@ -45,9 +42,6 @@ public class TwitterGraphAnalysis {
         }
     }
 
-    // ================================
-    // ЗАДАЧА 1: ЦЕПОЧКА СООБЩЕНИЙ
-    // ================================
     public static void runTask1_ChainStarter(int nChain) {
         SparkSession spark = createSparkSession();
         try {
@@ -58,9 +52,6 @@ public class TwitterGraphAnalysis {
         }
     }
 
-    // ================================
-    // ЗАДАЧА 2: КОМПОНЕНТЫ СВЯЗНОСТИ
-    // ================================
     public static void runTask2_LargestComponents() {
         SparkSession spark = createSparkSession();
         try {
@@ -93,9 +84,6 @@ public class TwitterGraphAnalysis {
         }
     }
 
-    // ================================
-    // ЗАДАЧА 3: ПОЛИТИЧЕСКИЕ БЕСЕДЫ
-    // ================================
     public static void runTask3_PoliticalGroups(double threshold) {
         SparkSession spark = createSparkSession();
         try {
@@ -105,10 +93,6 @@ public class TwitterGraphAnalysis {
             spark.stop();
         }
     }
-
-    // ================================
-    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
-    // ================================
 
     private static SparkSession createSparkSession() {
         return SparkSession.builder()
